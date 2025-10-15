@@ -1,1 +1,1 @@
-# fast_bllod_sugar_pro
+# fast_blood_sugar_pro
