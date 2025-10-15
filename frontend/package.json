@@ -1,0 +1,13 @@
+{
+  "name": "glucose-meter-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for Glucose Meter Application",
+  "main": "index.html",
+  "scripts": {
+    "serve": "python3 -m http.server 8080",
+    "serve-win": "python -m http.server 8080"
+  },
+  "keywords": ["glucose", "diabetes", "health", "monitoring", "frontend"],
+  "author": "Your Name",
+  "license": "MIT"
+}

@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  glucose-meter-backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend:/app
+      - ./data:/app/data
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    depends_on:
+      - db
+
+  glucose-meter-frontend:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+    depends_on:
+      - glucose-meter-backend
+
+  db:
+    image: sqlite:latest
+    volumes:
+      - ./data:/data
+
+volumes:
+  data:

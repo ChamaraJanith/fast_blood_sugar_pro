@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GlucoTracker - Glucose Monitoring System</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="flex items-center justify-between">
+                <h1 class="logo">🩸 GlucoTracker</h1>
+                <nav class="nav">
+                    <button class="nav-btn active" data-section="dashboard">Dashboard</button>
+                    <button class="nav-btn" data-section="entry">Add Data</button>
+                    <button class="nav-btn" data-section="charts">Charts</button>
+                    <button class="nav-btn" data-section="export">Export</button>
+                    <button class="nav-btn" data-section="settings">Settings</button>
+                </nav>
+                <button class="theme-toggle" id="themeToggle">🌓</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="section active">
+                <h2>Dashboard</h2>
+
+                <!-- Current Status Card -->
+                <div class="status-card">
+                    <div class="current-glucose">
+                        <div class="glucose-value" id="currentGlucose">--</div>
+                        <div class="glucose-unit">mg/dL</div>
+                        <div class="glucose-status" id="glucoseStatus">No data</div>
+                        <div class="last-reading" id="lastReading">--</div>
+                    </div>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="avgGlucose">--</div>
+                        <div class="stat-label">Average</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="timeInRange">--%</div>
+                        <div class="stat-label">Time in Range</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="totalReadings">--</div>
+                        <div class="stat-label">Total Readings</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="lastWeekAvg">--</div>
+                        <div class="stat-label">Last 7 Days</div>
+                    </div>
+                </div>
+
+                <!-- Recent Readings -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Recent Readings</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="recentReadings" class="readings-list">
+                            <p class="no-data">No readings available. Add your first reading!</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Data Entry Section -->
+            <section id="entry" class="section">
+                <h2>Add Glucose Data</h2>
+
+                <!-- Manual Entry -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📝 Manual Entry</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="glucoseForm">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Glucose Level *</label>
+                                    <input type="number" id="glucoseValue" class="form-control" 
+                                           min="30" max="500" step="0.1" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Unit</label>
+                                    <select id="glucoseUnit" class="form-control">
+                                        <option value="mg/dL">mg/dL</option>
+                                        <option value="mmol/L">mmol/L</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Date & Time</label>
+                                    <input type="datetime-local" id="glucoseDateTime" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Meal Tag</label>
+                                    <select id="mealTag" class="form-control">
+                                        <option value="">Select meal tag</option>
+                                        <option value="Fasting">Fasting</option>
+                                        <option value="Pre-meal">Pre-meal</option>
+                                        <option value="Post-meal">Post-meal</option>
+                                        <option value="Bedtime">Bedtime</option>
+                                        <option value="Random">Random</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Notes</label>
+                                <textarea id="glucoseNotes" class="form-control" rows="3" 
+                                          placeholder="Optional notes about the reading..."></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn--primary">
+                                <span class="btn-text">Add Reading</span>
+                                <span class="btn-loading" style="display: none;">Adding...</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- PDF Scanner -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📄 PDF Report Scanner</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="upload-area" id="pdfUploadArea">
+                            <div class="upload-content">
+                                <div class="upload-icon">📄</div>
+                                <h4>Upload Medical Report</h4>
+                                <p>Drag & drop a PDF file here, or click to browse</p>
+                                <button class="btn btn--secondary" id="browsePdf">Choose PDF File</button>
+                                <input type="file" id="pdfInput" accept=".pdf" style="display: none;">
+                            </div>
+                        </div>
+
+                        <div id="pdfResults" class="pdf-results" style="display: none;">
+                            <h4>Extracted Glucose Values</h4>
+                            <div id="extractedValues"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Text Extractor -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📝 Text Report Extractor</h3>
+                    </div>
+                    <div class="card-body">
+                        <textarea id="medicalText" class="form-control medical-textarea" 
+                                  placeholder="Paste medical report text here..."
+                                  rows="8"></textarea>
+
+                        <div class="button-group">
+                            <button id="scanText" class="btn btn--primary">
+                                <span class="btn-text">Scan for Glucose Values</span>
+                                <span class="btn-loading" style="display: none;">Scanning...</span>
+                            </button>
+                            <button id="clearText" class="btn btn--secondary">Clear Text</button>
+                        </div>
+
+                        <div id="textResults" class="text-results" style="display: none;">
+                            <h4>Found Glucose Values</h4>
+                            <div id="foundValues"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Charts Section -->
+            <section id="charts" class="section">
+                <h2>Charts & Analytics</h2>
+
+                <!-- Chart Controls -->
+                <div class="chart-controls">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Chart Type</label>
+                            <select id="chartType" class="form-control">
+                                <option value="trend">Trend Chart</option>
+                                <option value="daily">Daily Pattern</option>
+                                <option value="range">Time in Range</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Date Range</label>
+                            <select id="dateRange" class="form-control">
+                                <option value="7">Last 7 days</option>
+                                <option value="14">Last 14 days</option>
+                                <option value="30">Last 30 days</option>
+                                <option value="90">Last 90 days</option>
+                                <option value="custom">Custom Range</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart Container -->
+                <div class="chart-container">
+                    <canvas id="mainChart"></canvas>
+                </div>
+
+                <!-- Chart Statistics -->
+                <div class="chart-stats" id="chartStats">
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <span class="stat-label">Readings in Period:</span>
+                            <span class="stat-value" id="periodReadings">--</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Average Glucose:</span>
+                            <span class="stat-value" id="periodAverage">--</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Time in Range:</span>
+                            <span class="stat-value" id="periodTIR">--%</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Export Section -->
+            <section id="export" class="section">
+                <h2>Export & Reports</h2>
+
+                <div class="export-grid">
+                    <!-- Export Options -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>📊 Export Data</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="export-options">
+                                <button class="export-btn" data-format="csv">
+                                    <div class="export-icon">📄</div>
+                                    <div class="export-info">
+                                        <div class="export-title">CSV Export</div>
+                                        <div class="export-desc">Spreadsheet format</div>
+                                    </div>
+                                </button>
+
+                                <button class="export-btn" data-format="json">
+                                    <div class="export-icon">🔗</div>
+                                    <div class="export-info">
+                                        <div class="export-title">JSON Export</div>
+                                        <div class="export-desc">Raw data format</div>
+                                    </div>
+                                </button>
+
+                                <button class="export-btn" data-format="pdf">
+                                    <div class="export-icon">📑</div>
+                                    <div class="export-info">
+                                        <div class="export-title">PDF Report</div>
+                                        <div class="export-desc">Printable report</div>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Report Generator -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>📈 Generate Report</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="form-label">Report Period</label>
+                                <select id="reportPeriod" class="form-control">
+                                    <option value="week">Last Week</option>
+                                    <option value="month">Last Month</option>
+                                    <option value="quarter">Last 3 Months</option>
+                                    <option value="year">Last Year</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Include</label>
+                                <div class="checkbox-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="includeCharts" checked>
+                                        <span>Charts & Graphs</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="includeStats" checked>
+                                        <span>Statistics</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" id="includeReadings" checked>
+                                        <span>Individual Readings</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <button id="generateReport" class="btn btn--primary">
+                                Generate Report
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section id="settings" class="section">
+                <h2>Settings</h2>
+
+                <div class="settings-grid">
+                    <!-- Target Ranges -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>🎯 Target Ranges</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="form-label">Normal Range (mg/dL)</label>
+                                <div class="range-inputs">
+                                    <input type="number" id="normalMin" class="form-control" 
+                                           value="70" min="50" max="200">
+                                    <span>to</span>
+                                    <input type="number" id="normalMax" class="form-control" 
+                                           value="140" min="100" max="300">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">Default Unit</label>
+                                <select id="defaultUnit" class="form-control">
+                                    <option value="mg/dL">mg/dL</option>
+                                    <option value="mmol/L">mmol/L</option>
+                                </select>
+                            </div>
+
+                            <button id="saveRanges" class="btn btn--primary">
+                                Save Ranges
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Data Management -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>💾 Data Management</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="data-actions">
+                                <button id="backupData" class="btn btn--secondary">
+                                    📤 Backup Data
+                                </button>
+                                <button id="importData" class="btn btn--secondary">
+                                    📥 Import Data
+                                </button>
+                                <input type="file" id="importFile" accept=".json" style="display: none;">
+                                <button id="clearAllData" class="btn btn--danger">
+                                    🗑️ Clear All Data
+                                </button>
+                            </div>
+
+                            <div class="data-info">
+                                <p>Total Readings: <span id="totalDataCount">0</span></p>
+                                <p>Storage Used: <span id="storageUsed">0 KB</span></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- App Settings -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>⚙️ App Settings</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="form-label">Theme</label>
+                                <select id="themeSelect" class="form-control">
+                                    <option value="auto">Auto (System)</option>
+                                    <option value="light">Light</option>
+                                    <option value="dark">Dark</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="enableNotifications">
+                                    <span>Enable Notifications</span>
+                                </label>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="autoBackup">
+                                    <span>Automatic Daily Backup</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Status Messages -->
+    <div id="statusMessage" class="status-message hidden"></div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner"></div>
+        <p>Processing...</p>
+    </div>
+
+    <!-- Add to your results section -->
+<div id="results-section" class="card results-section hidden">
+    <div class="card__body">
+        <div id="results-summary"></div>
+        <div id="results-content" class="results-content"></div>
+        
+        <div class="export-section">
+            <h3>📤 Export Options</h3>
+            <p>Choose how you'd like to export your FBS analysis data:</p>
+            <div id="export-controls"></div>
+        </div>
+    </div>
+</div>
+
+
+    <script src="app.js"></script>
+
+    <!-- Add these to your index.html -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
+</body>
+</html>
