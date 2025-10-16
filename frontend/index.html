@@ -3,313 +3,789 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GlucoTracker - Glucose Monitoring System</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Glucose Tracker Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    ...
+</head>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --light: #f9fafb;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --primary: #60a5fa;
+            --primary-dark: #3b82f6;
+            --text-primary: #f9fafb;
+            --text-secondary: #d1d5db;
+            --border: #374151;
+            --light: #111827;
+            --dark: #f9fafb;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--light);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        header {
+            background: var(--dark);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: var(--shadow);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo::before {
+            content: "🩸";
+            font-size: 1.8rem;
+        }
+
+        /* Navigation */
+        nav {
+            background: white;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        [data-theme="dark"] nav {
+            background: var(--dark);
+        }
+
+        .nav-container {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem 0;
+            overflow-x: auto;
+        }
+
+        .nav-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 0.5rem;
+            transition: all 0.3s;
+            white-space: nowrap;
+            font-size: 0.9rem;
+        }
+
+        .nav-btn:hover {
+            background: var(--light);
+            color: var(--primary);
+        }
+
+        .nav-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Main Content */
+        main {
+            padding: 2rem 0;
+            min-height: calc(100vh - 200px);
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+        }
+
+        [data-theme="dark"] .card {
+            background: var(--dark);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        /* Dashboard */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            text-align: center;
+        }
+
+        [data-theme="dark"] .stat-card {
+            background: var(--dark);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 0.5rem 0;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .current-glucose {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+        }
+
+        .current-glucose .stat-value {
+            color: white;
+        }
+
+        .current-glucose .stat-label {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        [data-theme="dark"] input, 
+        [data-theme="dark"] select, 
+        [data-theme="dark"] textarea {
+            background: var(--light);
+            color: var(--text-primary);
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+        }
+
+        .btn--primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn--primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn--secondary {
+            background: var(--text-secondary);
+            color: white;
+        }
+
+        .btn--secondary:hover {
+            background: var(--text-primary);
+        }
+
+        .btn--outline {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn--outline:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn--sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* File Upload */
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: 0.75rem;
+            padding: 3rem 2rem;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .upload-area.dragover {
+            border-color: var(--primary);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Readings */
+        .reading-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 0.75rem;
+            background: var(--light);
+            transition: all 0.3s;
+        }
+
+        [data-theme="dark"] .reading-item {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .reading-item:hover {
+            transform: translateX(5px);
+            box-shadow: var(--shadow);
+        }
+
+        .reading-value {
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+
+        .reading-normal {
+            color: var(--success);
+        }
+
+        .reading-low {
+            color: var(--warning);
+        }
+
+        .reading-high {
+            color: var(--danger);
+        }
+
+        .reading-info {
+            text-align: right;
+        }
+
+        .reading-time {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .reading-tag {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            background: var(--primary);
+            color: white;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+
+        /* Extracted Values */
+        .extracted-value {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            background: var(--light);
+            border-left: 4px solid var(--primary);
+        }
+
+        [data-theme="dark"] .extracted-value {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .value-main {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .value-context {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        /* FBS Specific Styles */
+        .fbs-value {
+            border-left: 4px solid #28a745;
+        }
+
+        .possible-fbs-value {
+            border-left: 4px solid #ffc107;
+        }
+
+        .confidence-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-left: 8px;
+            font-weight: normal;
+        }
+
+        .confidence-high {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .confidence-medium {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .confidence-low {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .possible-reason {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-left: 8px;
+            background-color: #e2e3e5;
+            color: #383d41;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 2rem 0;
+        }
+
+        /* Status Messages */
+        .status-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            color: white;
+            font-weight: 500;
+            z-index: 1000;
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+
+        .status-message.success {
+            background: var(--success);
+        }
+
+        .status-message.error {
+            background: var(--danger);
+        }
+
+        .status-message.info {
+            background: var(--primary);
+        }
+
+        .status-message.hidden {
+            display: none;
+        }
+
+        /* Loading */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loading-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            text-align: center;
+        }
+
+        .spinner {
+            border: 3px solid var(--border);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-container {
+                padding: 0.5rem 0;
+            }
+
+            .value-main {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* No Data */
+        .no-data {
+            text-align: center;
+            padding: 2rem;
+            color: var(--text-secondary);
+        }
+
+        /* Export Options */
+        .export-options {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        /* Theme Toggle */
+        #themeToggle {
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.3s;
+        }
+
+        #themeToggle:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Batch Output */
+        .batch-output {
+            background-color: var(--text-primary);
+            color: var(--light);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 1rem 0;
+        }
+    </style>
 </head>
 <body>
     <!-- Header -->
-    <header class="header">
+    <header>
         <div class="container">
-            <div class="flex items-center justify-between">
-                <h1 class="logo">🩸 GlucoTracker</h1>
-                <nav class="nav">
-                    <button class="nav-btn active" data-section="dashboard">Dashboard</button>
-                    <button class="nav-btn" data-section="entry">Add Data</button>
-                    <button class="nav-btn" data-section="charts">Charts</button>
-                    <button class="nav-btn" data-section="export">Export</button>
-                    <button class="nav-btn" data-section="settings">Settings</button>
-                </nav>
-                <button class="theme-toggle" id="themeToggle">🌓</button>
+            <div class="header-content">
+                <div class="logo">Glucose Tracker Pro</div>
+                <button id="themeToggle" title="Toggle theme">🌓</button>
             </div>
         </div>
     </header>
 
-    <main class="main">
+    <!-- Navigation -->
+    <nav>
+        <div class="container">
+            <div class="nav-container">
+                <button class="nav-btn active" data-section="dashboard">📊 Dashboard</button>
+                <button class="nav-btn" data-section="add">➕ Add Reading</button>
+                <button class="nav-btn" data-section="scan">📄 Scan PDF</button>
+                <button class="nav-btn" data-section="text-scan">📝 Scan Text</button>
+                <button class="nav-btn" data-section="charts">📈 Charts</button>
+                <button class="nav-btn" data-section="settings">⚙️ Settings</button>
+                <button class="nav-btn" data-section="export">💾 Export</button>
+                <button class="nav-btn" data-section="system">🔧 System</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main>
         <div class="container">
             <!-- Dashboard Section -->
             <section id="dashboard" class="section active">
-                <h2>Dashboard</h2>
-
-                <!-- Current Status Card -->
-                <div class="status-card">
-                    <div class="current-glucose">
-                        <div class="glucose-value" id="currentGlucose">--</div>
-                        <div class="glucose-unit">mg/dL</div>
-                        <div class="glucose-status" id="glucoseStatus">No data</div>
-                        <div class="last-reading" id="lastReading">--</div>
+                <div class="dashboard-grid">
+                    <div class="stat-card current-glucose">
+                        <div class="stat-label">Current Glucose</div>
+                        <div class="stat-value" id="currentGlucose">--</div>
+                        <div class="stat-label" id="glucoseStatus">No data</div>
                     </div>
-                </div>
-
-                <!-- Quick Stats -->
-                <div class="stats-grid">
                     <div class="stat-card">
+                        <div class="stat-label">Average Glucose</div>
                         <div class="stat-value" id="avgGlucose">--</div>
-                        <div class="stat-label">Average</div>
+                        <div class="stat-label" id="lastReading">--</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value" id="timeInRange">--%</div>
                         <div class="stat-label">Time in Range</div>
+                        <div class="stat-value" id="timeInRange">--%</div>
+                        <div class="stat-label">70-140 mg/dL</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-value" id="totalReadings">--</div>
                         <div class="stat-label">Total Readings</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" id="lastWeekAvg">--</div>
-                        <div class="stat-label">Last 7 Days</div>
+                        <div class="stat-value" id="totalReadings">--</div>
+                        <div class="stat-label" id="lastWeekAvg">Last week: --</div>
                     </div>
                 </div>
 
-                <!-- Recent Readings -->
                 <div class="card">
                     <div class="card-header">
-                        <h3>Recent Readings</h3>
+                        <h2 class="card-title">Recent Readings</h2>
+                        <button class="btn btn--primary btn--sm" onclick="showSection('add')">Add New</button>
                     </div>
-                    <div class="card-body">
-                        <div id="recentReadings" class="readings-list">
-                            <p class="no-data">No readings available. Add your first reading!</p>
-                        </div>
+                    <div id="recentReadings">
+                        <p class="no-data">No readings available. Add your first reading!</p>
                     </div>
                 </div>
             </section>
 
-            <!-- Data Entry Section -->
-            <section id="entry" class="section">
-                <h2>Add Glucose Data</h2>
-
-                <!-- Manual Entry -->
+            <!-- Add Reading Section -->
+            <section id="add" class="section">
                 <div class="card">
                     <div class="card-header">
-                        <h3>📝 Manual Entry</h3>
+                        <h2 class="card-title">Add Glucose Reading</h2>
                     </div>
-                    <div class="card-body">
-                        <form id="glucoseForm">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label">Glucose Level *</label>
-                                    <input type="number" id="glucoseValue" class="form-control" 
-                                           min="30" max="500" step="0.1" required>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Unit</label>
-                                    <select id="glucoseUnit" class="form-control">
-                                        <option value="mg/dL">mg/dL</option>
-                                        <option value="mmol/L">mmol/L</option>
-                                    </select>
-                                </div>
-                            </div>
+                    <form id="glucoseForm">
+                        <div class="form-group">
+                            <label for="glucoseValue">Glucose Value *</label>
+                            <input type="number" id="glucoseValue" required min="30" max="500" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label for="glucoseUnit">Unit</label>
+                            <select id="glucoseUnit">
+                                <option value="mg/dL">mg/dL</option>
+                                <option value="mmol/L">mmol/L</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="glucoseDateTime">Date & Time *</label>
+                            <input type="datetime-local" id="glucoseDateTime" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="mealTag">Meal Tag</label>
+                            <select id="mealTag">
+                                <option value="">None</option>
+                                <option value="Fasting">Fasting</option>
+                                <option value="Pre-meal">Pre-meal</option>
+                                <option value="Post-meal">Post-meal</option>
+                                <option value="Bedtime">Bedtime</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="glucoseNotes">Notes</label>
+                            <textarea id="glucoseNotes" rows="3"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn--primary">Add Reading</button>
+                    </form>
+                </div>
+            </section>
 
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label class="form-label">Date & Time</label>
-                                    <input type="datetime-local" id="glucoseDateTime" class="form-control" required>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Meal Tag</label>
-                                    <select id="mealTag" class="form-control">
-                                        <option value="">Select meal tag</option>
-                                        <option value="Fasting">Fasting</option>
-                                        <option value="Pre-meal">Pre-meal</option>
-                                        <option value="Post-meal">Post-meal</option>
-                                        <option value="Bedtime">Bedtime</option>
-                                        <option value="Random">Random</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label">Notes</label>
-                                <textarea id="glucoseNotes" class="form-control" rows="3" 
-                                          placeholder="Optional notes about the reading..."></textarea>
-                            </div>
-
-                            <button type="submit" class="btn btn--primary">
-                                <span class="btn-text">Add Reading</span>
-                                <span class="btn-loading" style="display: none;">Adding...</span>
-                            </button>
-                        </form>
+            <!-- Scan PDF Section -->
+            <section id="scan" class="section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Scan PDF for Glucose Values</h2>
+                    </div>
+                    <div class="upload-area" id="pdfUploadArea">
+                        <div class="upload-icon">📄</div>
+                        <p>Drag and drop a PDF file here or</p>
+                        <button type="button" class="btn btn--primary" id="browsePdf">Browse Files</button>
+                        <input type="file" id="pdfInput" accept="application/pdf" style="display: none;">
+                    </div>
+                    <div id="pdfResults" style="display: none; margin-top: 2rem;">
+                        <h3>Extracted Fasting Blood Sugar Values</h3>
+                        <div id="extractedValues"></div>
                     </div>
                 </div>
+            </section>
 
-                <!-- PDF Scanner -->
+            <!-- Scan Text Section -->
+            <section id="text-scan" class="section">
                 <div class="card">
                     <div class="card-header">
-                        <h3>📄 PDF Report Scanner</h3>
+                        <h2 class="card-title">Scan Text for Glucose Values</h2>
                     </div>
-                    <div class="card-body">
-                        <div class="upload-area" id="pdfUploadArea">
-                            <div class="upload-content">
-                                <div class="upload-icon">📄</div>
-                                <h4>Upload Medical Report</h4>
-                                <p>Drag & drop a PDF file here, or click to browse</p>
-                                <button class="btn btn--secondary" id="browsePdf">Choose PDF File</button>
-                                <input type="file" id="pdfInput" accept=".pdf" style="display: none;">
-                            </div>
-                        </div>
-
-                        <div id="pdfResults" class="pdf-results" style="display: none;">
-                            <h4>Extracted Glucose Values</h4>
-                            <div id="extractedValues"></div>
-                        </div>
+                    <div class="form-group">
+                        <label for="medicalText">Paste Medical Text</label>
+                        <textarea id="medicalText" rows="10" placeholder="Paste your medical report text here..."></textarea>
                     </div>
-                </div>
-
-                <!-- Text Extractor -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3>📝 Text Report Extractor</h3>
+                    <div style="display: flex; gap: 1rem;">
+                        <button type="button" class="btn btn--primary" id="scanText">
+                            <span class="btn-text">Scan Text</span>
+                            <span class="btn-loading" style="display: none;">Scanning...</span>
+                        </button>
+                        <button type="button" class="btn btn--outline" id="clearText">Clear</button>
                     </div>
-                    <div class="card-body">
-                        <textarea id="medicalText" class="form-control medical-textarea" 
-                                  placeholder="Paste medical report text here..."
-                                  rows="8"></textarea>
-
-                        <div class="button-group">
-                            <button id="scanText" class="btn btn--primary">
-                                <span class="btn-text">Scan for Glucose Values</span>
-                                <span class="btn-loading" style="display: none;">Scanning...</span>
-                            </button>
-                            <button id="clearText" class="btn btn--secondary">Clear Text</button>
-                        </div>
-
-                        <div id="textResults" class="text-results" style="display: none;">
-                            <h4>Found Glucose Values</h4>
-                            <div id="foundValues"></div>
-                        </div>
+                    <div id="textResults" style="display: none; margin-top: 2rem;">
+                        <h3>Found Fasting Blood Sugar Values</h3>
+                        <div id="foundValues"></div>
                     </div>
                 </div>
             </section>
 
             <!-- Charts Section -->
             <section id="charts" class="section">
-                <h2>Charts & Analytics</h2>
-
-                <!-- Chart Controls -->
-                <div class="chart-controls">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">Chart Type</label>
-                            <select id="chartType" class="form-control">
-                                <option value="trend">Trend Chart</option>
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Glucose Charts</h2>
+                        <div style="display: flex; gap: 1rem;">
+                            <select id="chartType">
+                                <option value="trend">Trend</option>
                                 <option value="daily">Daily Pattern</option>
                                 <option value="range">Time in Range</option>
                             </select>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Date Range</label>
-                            <select id="dateRange" class="form-control">
+                            <select id="dateRange">
                                 <option value="7">Last 7 days</option>
-                                <option value="14">Last 14 days</option>
                                 <option value="30">Last 30 days</option>
                                 <option value="90">Last 90 days</option>
-                                <option value="custom">Custom Range</option>
+                                <option value="all">All time</option>
                             </select>
                         </div>
                     </div>
-                </div>
-
-                <!-- Chart Container -->
-                <div class="chart-container">
-                    <canvas id="mainChart"></canvas>
-                </div>
-
-                <!-- Chart Statistics -->
-                <div class="chart-stats" id="chartStats">
-                    <div class="stats-grid">
-                        <div class="stat-item">
-                            <span class="stat-label">Readings in Period:</span>
-                            <span class="stat-value" id="periodReadings">--</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Average Glucose:</span>
-                            <span class="stat-value" id="periodAverage">--</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Time in Range:</span>
-                            <span class="stat-value" id="periodTIR">--%</span>
-                        </div>
+                    <div class="chart-container">
+                        <canvas id="mainChart"></canvas>
                     </div>
-                </div>
-            </section>
-
-            <!-- Export Section -->
-            <section id="export" class="section">
-                <h2>Export & Reports</h2>
-
-                <div class="export-grid">
-                    <!-- Export Options -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>📊 Export Data</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 2rem;">
+                        <div class="stat-card">
+                            <div class="stat-label">Period Readings</div>
+                            <div class="stat-value" id="periodReadings">0</div>
                         </div>
-                        <div class="card-body">
-                            <div class="export-options">
-                                <button class="export-btn" data-format="csv">
-                                    <div class="export-icon">📄</div>
-                                    <div class="export-info">
-                                        <div class="export-title">CSV Export</div>
-                                        <div class="export-desc">Spreadsheet format</div>
-                                    </div>
-                                </button>
-
-                                <button class="export-btn" data-format="json">
-                                    <div class="export-icon">🔗</div>
-                                    <div class="export-info">
-                                        <div class="export-title">JSON Export</div>
-                                        <div class="export-desc">Raw data format</div>
-                                    </div>
-                                </button>
-
-                                <button class="export-btn" data-format="pdf">
-                                    <div class="export-icon">📑</div>
-                                    <div class="export-info">
-                                        <div class="export-title">PDF Report</div>
-                                        <div class="export-desc">Printable report</div>
-                                    </div>
-                                </button>
-                            </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Period Average</div>
+                            <div class="stat-value" id="periodAverage">--</div>
                         </div>
-                    </div>
-
-                    <!-- Report Generator -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>📈 Generate Report</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="form-group">
-                                <label class="form-label">Report Period</label>
-                                <select id="reportPeriod" class="form-control">
-                                    <option value="week">Last Week</option>
-                                    <option value="month">Last Month</option>
-                                    <option value="quarter">Last 3 Months</option>
-                                    <option value="year">Last Year</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label">Include</label>
-                                <div class="checkbox-group">
-                                    <label class="checkbox-label">
-                                        <input type="checkbox" id="includeCharts" checked>
-                                        <span>Charts & Graphs</span>
-                                    </label>
-                                    <label class="checkbox-label">
-                                        <input type="checkbox" id="includeStats" checked>
-                                        <span>Statistics</span>
-                                    </label>
-                                    <label class="checkbox-label">
-                                        <input type="checkbox" id="includeReadings" checked>
-                                        <span>Individual Readings</span>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <button id="generateReport" class="btn btn--primary">
-                                Generate Report
-                            </button>
+                        <div class="stat-card">
+                            <div class="stat-label">Time in Range</div>
+                            <div class="stat-value" id="periodTIR">--%</div>
                         </div>
                     </div>
                 </div>
@@ -317,130 +793,1804 @@
 
             <!-- Settings Section -->
             <section id="settings" class="section">
-                <h2>Settings</h2>
-
-                <div class="settings-grid">
-                    <!-- Target Ranges -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>🎯 Target Ranges</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="form-group">
-                                <label class="form-label">Normal Range (mg/dL)</label>
-                                <div class="range-inputs">
-                                    <input type="number" id="normalMin" class="form-control" 
-                                           value="70" min="50" max="200">
-                                    <span>to</span>
-                                    <input type="number" id="normalMax" class="form-control" 
-                                           value="140" min="100" max="300">
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label class="form-label">Default Unit</label>
-                                <select id="defaultUnit" class="form-control">
-                                    <option value="mg/dL">mg/dL</option>
-                                    <option value="mmol/L">mmol/L</option>
-                                </select>
-                            </div>
-
-                            <button id="saveRanges" class="btn btn--primary">
-                                Save Ranges
-                            </button>
-                        </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Settings</h2>
                     </div>
-
-                    <!-- Data Management -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>💾 Data Management</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="data-actions">
-                                <button id="backupData" class="btn btn--secondary">
-                                    📤 Backup Data
-                                </button>
-                                <button id="importData" class="btn btn--secondary">
-                                    📥 Import Data
-                                </button>
-                                <input type="file" id="importFile" accept=".json" style="display: none;">
-                                <button id="clearAllData" class="btn btn--danger">
-                                    🗑️ Clear All Data
-                                </button>
-                            </div>
-
-                            <div class="data-info">
-                                <p>Total Readings: <span id="totalDataCount">0</span></p>
-                                <p>Storage Used: <span id="storageUsed">0 KB</span></p>
-                            </div>
-                        </div>
+                    <div class="form-group">
+                        <label for="normalMin">Normal Range Minimum (mg/dL)</label>
+                        <input type="number" id="normalMin" value="70" min="50" max="150">
                     </div>
-
-                    <!-- App Settings -->
-                    <div class="card">
-                        <div class="card-header">
-                            <h3>⚙️ App Settings</h3>
-                        </div>
-                        <div class="card-body">
-                            <div class="form-group">
-                                <label class="form-label">Theme</label>
-                                <select id="themeSelect" class="form-control">
-                                    <option value="auto">Auto (System)</option>
-                                    <option value="light">Light</option>
-                                    <option value="dark">Dark</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="enableNotifications">
-                                    <span>Enable Notifications</span>
-                                </label>
-                            </div>
-
-                            <div class="form-group">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="autoBackup">
-                                    <span>Automatic Daily Backup</span>
-                                </label>
-                            </div>
-                        </div>
+                    <div class="form-group">
+                        <label for="normalMax">Normal Range Maximum (mg/dL)</label>
+                        <input type="number" id="normalMax" value="140" min="100" max="300">
                     </div>
+                    <div class="form-group">
+                        <label for="defaultUnit">Default Unit</label>
+                        <select id="defaultUnit">
+                            <option value="mg/dL">mg/dL</option>
+                            <option value="mmol/L">mmol/L</option>
+                        </select>
+                    </div>
+                    <button type="button" class="btn btn--primary" id="saveRanges">Save Settings</button>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Data Management</h2>
+                    </div>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <button type="button" class="btn btn--primary" id="backupData">📥 Backup Data</button>
+                        <button type="button" class="btn btn--secondary" id="importData">📤 Import Data</button>
+                        <input type="file" id="importFile" accept=".json" style="display: none;">
+                        <button type="button" class="btn btn--outline" id="clearAllData">🗑️ Clear All Data</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Export Section -->
+            <section id="export" class="section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">Export Data</h2>
+                    </div>
+                    <p style="margin-bottom: 1.5rem;">Export your glucose data in different formats</p>
+                    <div class="export-options">
+                        <button type="button" class="btn btn--primary export-btn" data-format="csv">📊 Export as CSV</button>
+                        <button type="button" class="btn btn--primary export-btn" data-format="json">📋 Export as JSON</button>
+                        <button type="button" class="btn btn--primary export-btn" data-format="pdf">📄 Export as PDF</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- System Section -->
+            <section id="system" class="section">
+                <div class="card">
+                    <div class="card-header">
+                        <h2 class="card-title">System Tools</h2>
+                    </div>
+                    <p style="margin-bottom: 1.5rem;">Run system scripts for maintenance or installation</p>
+                    <button id="runBatchBtn" class="btn btn--primary">⚙️ Run Installation Script</button>
+                    <div id="batchOutput" class="batch-output" style="display: none;"></div>
                 </div>
             </section>
         </div>
     </main>
 
-    <!-- Status Messages -->
+    <!-- Status Message -->
     <div id="statusMessage" class="status-message hidden"></div>
 
     <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
-        <div class="loading-spinner"></div>
-        <p>Processing...</p>
-    </div>
-
-    <!-- Add to your results section -->
-<div id="results-section" class="card results-section hidden">
-    <div class="card__body">
-        <div id="results-summary"></div>
-        <div id="results-content" class="results-content"></div>
-        
-        <div class="export-section">
-            <h3>📤 Export Options</h3>
-            <p>Choose how you'd like to export your FBS analysis data:</p>
-            <div id="export-controls"></div>
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p id="loadingText">Loading...</p>
         </div>
     </div>
-</div>
 
+    <script>
 
-    <script src="app.js"></script>
+        
+        // Global variables
+        let glucoseData = [];
+        let charts = {};
+        let settings = {
+            normalMin: 70,
+            normalMax: 140,
+            unit: 'mg/dL',
+            theme: 'auto'
+        };
 
-    <!-- Add these to your index.html -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+        // Sample data for initialization
+        const sampleData = [
+            {"id": 1, "timestamp": "2024-08-27T07:30:00", "glucose": 95, "unit": "mg/dL", "mealTag": "Fasting", "notes": ""},
+            {"id": 2, "timestamp": "2024-08-27T09:15:00", "glucose": 142, "unit": "mg/dL", "mealTag": "Post-meal", "notes": "After breakfast"},
+            {"id": 3, "timestamp": "2024-08-27T12:30:00", "glucose": 118, "unit": "mg/dL", "mealTag": "Pre-meal", "notes": ""},
+            {"id": 4, "timestamp": "2024-08-27T14:45:00", "glucose": 156, "unit": "mg/dL", "mealTag": "Post-meal", "notes": "After lunch"},
+            {"id": 5, "timestamp": "2024-08-27T19:20:00", "glucose": 134, "unit": "mg/dL", "mealTag": "Post-meal", "notes": "After dinner"},
+            {"id": 6, "timestamp": "2024-08-27T22:10:00", "glucose": 108, "unit": "mg/dL", "mealTag": "Bedtime", "notes": ""}
+        ];
 
+        // Enhanced FBS extraction patterns - more comprehensive
+        const fbsPatterns = [
+            "FASTING PLASMA GLUCOSE", "FBS", "fasting blood sugar", 
+            "fasting glucose", "fasting blood glucose", "FPG",
+            "Glucose, Fasting", "GLUCOSE FASTING", "Fasting Plasma Glucose",
+            "Fasting Blood Glucose", "Fasting Sugar", "FBG"
+        ];
+
+        // Context patterns that indicate fasting state
+        const fastingContextPatterns = [
+            "before breakfast", "before meal", "on empty stomach",
+            "morning glucose", "early morning", "fasting state",
+            "after overnight fast", "8 hour fast", "12 hour fast"
+        ];
+
+        // Time patterns that suggest fasting (early morning)
+        const fastingTimePatterns = [
+            /\b(0[6-9]|1[0-2]):[0-5][0-9]\s*(AM|am)/,  // 6:00 AM - 12:00 PM
+            /\b(0[6-9]|1[0-2]):[0-5][0-9]\s*(A\.M\.|a\.m\.)/
+        ];
+
+        // Enhanced glucose patterns specifically for FBS
+        const fbsGlucosePatterns = [
+            // FBS followed by value
+            /(?:FBS|Fasting|fasting)\s*(?:Plasma)?\s*(?:Blood)?\s*(?:Glucose|Sugar|glucose|sugar)\s*[:=]?\s*(\d+\.?\d*)\s*(mg\/dl|mmol\/L)?/gi,
+            // Value followed by FBS
+            /(\d+\.?\d*)\s*(mg\/dl|mmol\/L)?\s*(?:FBS|Fasting|fasting)/gi,
+            // Lab report format
+            /Fasting\s*(?:Plasma)?\s*Glucose\s*[:=]?\s*(\d+\.?\d*)\s*(mg\/dl|mmol\/L)?/gi,
+            // More generic patterns with context
+            /(?:Glucose|Sugar)\s*(?:Fasting|fasting|FBS)\s*[:=]?\s*(\d+\.?\d*)\s*(mg\/dl|mmol\/L)?/gi
+        ];
+
+        // General glucose patterns (for non-fasting values)
+        const glucosePatterns = [
+            /\b(\d+\.?\d*)\s*mg\/dL/gi,
+            /\b(\d+\.?\d*)\s*mmol\/L/gi,
+            /glucose\s*:?\s*(\d+\.?\d*)/gi,
+            /FBS\s*:?\s*(\d+\.?\d*)/gi,
+            /HbA1c\s*:?\s*(\d+\.?\d*)/gi
+        ];
+
+        // Initialize PDF.js
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+            initializeEventListeners();
+            updateDashboard();
+            setCurrentDateTime();
+            initializeTheme();
+
+            // Load sample data if no data exists
+            if (glucoseData.length === 0) {
+                glucoseData = sampleData.map(item => ({
+                    ...item,
+                    timestamp: new Date(item.timestamp).toISOString()
+                }));
+                saveData();
+                updateDashboard();
+            }
+        });
+
+        // Event Listeners
+        function initializeEventListeners() {
+            // Navigation
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const section = e.target.dataset.section;
+                    showSection(section);
+                });
+            });
+
+            // Theme toggle
+            const themeToggle = document.getElementById('themeToggle');
+            if (themeToggle) {
+                themeToggle.addEventListener('click', toggleTheme);
+            }
+
+            // Form submission
+            const glucoseForm = document.getElementById('glucoseForm');
+            if (glucoseForm) {
+                glucoseForm.addEventListener('submit', handleGlucoseSubmit);
+            }
+
+            // PDF upload
+            const pdfInput = document.getElementById('pdfInput');
+            const browsePdf = document.getElementById('browsePdf');
+            const pdfUploadArea = document.getElementById('pdfUploadArea');
+
+            if (pdfInput && browsePdf && pdfUploadArea) {
+                browsePdf.addEventListener('click', () => pdfInput.click());
+                pdfInput.addEventListener('change', handlePDFUpload);
+
+                // Drag and drop
+                pdfUploadArea.addEventListener('dragover', handleDragOver);
+                pdfUploadArea.addEventListener('dragleave', handleDragLeave);
+                pdfUploadArea.addEventListener('drop', handlePDFDrop);
+            }
+
+            // Text scanning
+            const scanText = document.getElementById('scanText');
+            const clearText = document.getElementById('clearText');
+
+            if (scanText) {
+                scanText.addEventListener('click', handleTextScan);
+            }
+
+            if (clearText) {
+                clearText.addEventListener('click', () => {
+                    document.getElementById('medicalText').value = '';
+                    document.getElementById('textResults').style.display = 'none';
+                });
+            }
+
+            // Chart controls
+            const chartType = document.getElementById('chartType');
+            const dateRange = document.getElementById('dateRange');
+
+            if (chartType) {
+                chartType.addEventListener('change', updateChart);
+            }
+
+            if (dateRange) {
+                dateRange.addEventListener('change', updateChart);
+            }
+
+            // Export buttons
+            document.querySelectorAll('.export-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const format = e.currentTarget.dataset.format;
+                    exportData(format);
+                });
+            });
+
+            // Settings
+            const saveRanges = document.getElementById('saveRanges');
+            if (saveRanges) {
+                saveRanges.addEventListener('click', saveSettings);
+            }
+
+            // Data management
+            const backupData = document.getElementById('backupData');
+            const importData = document.getElementById('importData');
+            const clearAllData = document.getElementById('clearAllData');
+            const importFile = document.getElementById('importFile');
+
+            if (backupData) {
+                backupData.addEventListener('click', () => exportData('json'));
+            }
+
+            if (importData && importFile) {
+                importData.addEventListener('click', () => importFile.click());
+                importFile.addEventListener('change', handleDataImport);
+            }
+
+            if (clearAllData) {
+                clearAllData.addEventListener('click', handleClearAllData);
+            }
+
+            // Batch file button - updated to connect to backend
+            const runBatchBtn = document.getElementById('runBatchBtn');
+            if (runBatchBtn) {
+                runBatchBtn.addEventListener('click', handleRunBatch);
+            }
+        }
+
+        // Navigation
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+
+            // Remove active class from nav buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected section
+            const targetSection = document.getElementById(sectionId);
+            const targetButton = document.querySelector(`[data-section="${sectionId}"]`);
+
+            if (targetSection) {
+                targetSection.classList.add('active');
+            }
+
+            if (targetButton) {
+                targetButton.classList.add('active');
+            }
+
+            // Update chart if charts section is shown
+            if (sectionId === 'charts') {
+                setTimeout(updateChart, 100);
+            }
+        }
+
+        // Data Management
+        function loadData() {
+            const saved = localStorage.getItem('glucoseData');
+            if (saved) {
+                try {
+                    glucoseData = JSON.parse(saved);
+                } catch (e) {
+                    console.error('Error loading data:', e);
+                    glucoseData = [];
+                }
+            }
+
+            const savedSettings = localStorage.getItem('glucoseSettings');
+            if (savedSettings) {
+                try {
+                    settings = { ...settings, ...JSON.parse(savedSettings) };
+                } catch (e) {
+                    console.error('Error loading settings:', e);
+                }
+            }
+        }
+
+        function saveData() {
+            try {
+                localStorage.setItem('glucoseData', JSON.stringify(glucoseData));
+                localStorage.setItem('glucoseSettings', JSON.stringify(settings));
+            } catch (e) {
+                console.error('Error saving data:', e);
+                showStatus('Error saving data. Storage may be full.', 'error');
+            }
+        }
+
+        // Dashboard Updates
+        function updateDashboard() {
+            updateCurrentGlucose();
+            updateStats();
+            updateRecentReadings();
+        }
+
+        function updateCurrentGlucose() {
+            const currentGlucoseEl = document.getElementById('currentGlucose');
+            const glucoseStatusEl = document.getElementById('glucoseStatus');
+            const lastReadingEl = document.getElementById('lastReading');
+
+            if (!currentGlucoseEl || !glucoseStatusEl || !lastReadingEl) return;
+
+            if (glucoseData.length === 0) {
+                currentGlucoseEl.textContent = '--';
+                glucoseStatusEl.textContent = 'No data';
+                lastReadingEl.textContent = '--';
+                return;
+            }
+
+            // Get most recent reading
+            const sortedData = [...glucoseData].sort((a, b) => 
+                new Date(b.timestamp) - new Date(a.timestamp)
+            );
+
+            const latest = sortedData[0];
+
+            currentGlucoseEl.textContent = latest.glucose;
+
+            // Determine status
+            let status = 'Normal';
+            if (latest.glucose < settings.normalMin) {
+                status = 'Low';
+            } else if (latest.glucose > settings.normalMax) {
+                status = 'High';
+            }
+
+            glucoseStatusEl.textContent = status;
+
+            // Format last reading time
+            const readingTime = new Date(latest.timestamp);
+            const now = new Date();
+            const diffMs = now - readingTime;
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+            let timeStr = '';
+            if (diffHours > 0) {
+                timeStr = `${diffHours}h ${diffMins}m ago`;
+            } else {
+                timeStr = `${diffMins}m ago`;
+            }
+
+            lastReadingEl.textContent = `Last reading: ${timeStr}`;
+        }
+
+        function updateStats() {
+            const avgGlucoseEl = document.getElementById('avgGlucose');
+            const timeInRangeEl = document.getElementById('timeInRange');
+            const totalReadingsEl = document.getElementById('totalReadings');
+            const lastWeekAvgEl = document.getElementById('lastWeekAvg');
+
+            if (glucoseData.length === 0) {
+                if (avgGlucoseEl) avgGlucoseEl.textContent = '--';
+                if (timeInRangeEl) timeInRangeEl.textContent = '--%';
+                if (totalReadingsEl) totalReadingsEl.textContent = '--';
+                if (lastWeekAvgEl) lastWeekAvgEl.textContent = '--';
+                return;
+            }
+
+            // Calculate overall average
+            const totalGlucose = glucoseData.reduce((sum, reading) => sum + reading.glucose, 0);
+            const avgGlucose = Math.round(totalGlucose / glucoseData.length);
+
+            // Calculate time in range
+            const inRangeCount = glucoseData.filter(reading => 
+                reading.glucose >= settings.normalMin && reading.glucose <= settings.normalMax
+            ).length;
+            const timeInRange = Math.round((inRangeCount / glucoseData.length) * 100);
+
+            // Calculate last week average
+            const lastWeek = new Date();
+            lastWeek.setDate(lastWeek.getDate() - 7);
+            const lastWeekData = glucoseData.filter(reading => 
+                new Date(reading.timestamp) >= lastWeek
+            );
+
+            let lastWeekAvg = '--';
+            if (lastWeekData.length > 0) {
+                const lastWeekTotal = lastWeekData.reduce((sum, reading) => sum + reading.glucose, 0);
+                lastWeekAvg = Math.round(lastWeekTotal / lastWeekData.length);
+            }
+
+            // Update UI
+            if (avgGlucoseEl) avgGlucoseEl.textContent = avgGlucose;
+            if (timeInRangeEl) timeInRangeEl.textContent = timeInRange + '%';
+            if (totalReadingsEl) totalReadingsEl.textContent = glucoseData.length;
+            if (lastWeekAvgEl) lastWeekAvgEl.textContent = lastWeekAvg;
+        }
+
+        function updateRecentReadings() {
+            const recentReadingsEl = document.getElementById('recentReadings');
+            if (!recentReadingsEl) return;
+
+            if (glucoseData.length === 0) {
+                recentReadingsEl.innerHTML = '<p class="no-data">No readings available. Add your first reading!</p>';
+                return;
+            }
+
+            // Get last 5 readings
+            const sortedData = [...glucoseData].sort((a, b) => 
+                new Date(b.timestamp) - new Date(a.timestamp)
+            ).slice(0, 5);
+
+            const html = sortedData.map(reading => {
+                const date = new Date(reading.timestamp);
+                const timeStr = date.toLocaleString();
+
+                let statusClass = 'reading-normal';
+                if (reading.glucose < settings.normalMin) {
+                    statusClass = 'reading-low';
+                } else if (reading.glucose > settings.normalMax) {
+                    statusClass = 'reading-high';
+                }
+
+                return `
+                    <div class="reading-item">
+                        <div class="reading-value ${statusClass}">
+                            ${reading.glucose} ${reading.unit}
+                        </div>
+                        <div class="reading-info">
+                            <div class="reading-time">${timeStr}</div>
+                            ${reading.mealTag ? `<div class="reading-tag">${reading.mealTag}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            recentReadingsEl.innerHTML = html;
+        }
+
+        // Form Handling
+        function setCurrentDateTime() {
+            const dateTimeInput = document.getElementById('glucoseDateTime');
+            if (dateTimeInput) {
+                const now = new Date();
+                const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+                dateTimeInput.value = localDateTime.toISOString().slice(0, 16);
+            }
+        }
+
+        function handleGlucoseSubmit(e) {
+            e.preventDefault();
+
+            const glucose = parseFloat(document.getElementById('glucoseValue').value);
+            const unit = document.getElementById('glucoseUnit').value;
+            const dateTime = document.getElementById('glucoseDateTime').value;
+            const mealTag = document.getElementById('mealTag').value;
+            const notes = document.getElementById('glucoseNotes').value;
+
+            if (!glucose || !dateTime) {
+                showStatus('Please fill in all required fields', 'error');
+                return;
+            }
+
+            if (glucose < 30 || glucose > 500) {
+                showStatus('Glucose value must be between 30 and 500', 'error');
+                return;
+            }
+
+            // Add new reading
+            const newReading = {
+                id: Date.now(),
+                glucose: glucose,
+                unit: unit,
+                timestamp: new Date(dateTime).toISOString(),
+                mealTag: mealTag,
+                notes: notes
+            };
+
+            glucoseData.unshift(newReading);
+            saveData();
+            updateDashboard();
+
+            // Reset form
+            e.target.reset();
+            setCurrentDateTime();
+
+            showStatus('Glucose reading added successfully!', 'success');
+        }
+
+        // PDF Processing
+        function handlePDFUpload(e) {
+            const file = e.target.files[0];
+            if (file) {
+                processPDF(file);
+            }
+        }
+
+        function handlePDFDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+
+            const file = e.dataTransfer.files[0];
+            if (file && file.type === 'application/pdf') {
+                processPDF(file);
+            } else {
+                showStatus('Please drop a PDF file', 'error');
+            }
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.currentTarget.classList.add('dragover');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('dragover');
+        }
+
+        async function processPDF(file) {
+            if (!pdfjsLib) {
+                showStatus('PDF processing not available', 'error');
+                return;
+            }
+
+            showLoading('Processing PDF...');
+
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+
+                let fullText = '';
+
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const textContent = await page.getTextContent();
+                    const pageText = textContent.items.map(item => item.str).join(' ');
+                    fullText += pageText + '\n';
+                }
+
+                const extractedValues = extractGlucoseFromText(fullText);
+                displayPDFResults(file.name, extractedValues, fullText);
+
+                hideLoading();
+                showStatus(`Extracted ${extractedValues.length} glucose values from PDF`, 'success');
+
+            } catch (error) {
+                hideLoading();
+                console.error('PDF processing error:', error);
+                showStatus('Error processing PDF file', 'error');
+            }
+        }
+
+        // *** ENHANCED TEXT EXTRACTION FUNCTION ***
+        // This function is now updated to handle tabular data.
+        function extractGlucoseFromText(text) {
+            const results = [];
+            const lines = text.split('\n');
+            
+            // First pass: Look for explicit FBS patterns
+            lines.forEach((line, lineIndex) => {
+                const originalLine = line;
+                let found = false;
+
+                // Check for FBS patterns
+                const fbsFound = fbsPatterns.some(pattern => 
+                    line.toLowerCase().includes(pattern.toLowerCase())
+                );
+                
+                // Check for fasting context patterns
+                const contextFound = fastingContextPatterns.some(pattern => 
+                    line.toLowerCase().includes(pattern.toLowerCase())
+                );
+                
+                // Check for fasting time patterns
+                const timeFound = fastingTimePatterns.some(pattern => 
+                    pattern.test(line)
+                );
+                
+                if (fbsFound || contextFound || timeFound) {
+                    // *** NEW: Primary logic for tabular data ***
+                    // Split by tabs or multiple spaces to handle lab report formats
+                    const parts = line.split(/\t+|\s{2,}/);
+                    
+                    for (let i = 0; i < parts.length; i++) {
+                        const part = parts[i].trim();
+                        const nextPart = parts[i+1] ? parts[i+1].trim() : '';
+                        const unitPart = parts[i+2] ? parts[i+2].trim() : '';
+
+                        // Check if this part contains an FBS keyword
+                        if (fbsPatterns.some(p => part.toLowerCase().includes(p.toLowerCase()))) {
+                            // Check if the next part is a valid number
+                            if (/^\d+\.?\d*$/.test(nextPart)) {
+                                const value = parseFloat(nextPart);
+                                if (value >= 30 && value <= 500) {
+                                    const unit = (unitPart.match(/mg\/dl|mmol\/L/i) ? unitPart : 'mg/dL');
+                                    results.push({
+                                        value: value,
+                                        unit: unit,
+                                        context: originalLine.trim(),
+                                        line: lineIndex + 1,
+                                        type: 'FBS',
+                                        confidence: 'high'
+                                    });
+                                    found = true;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // *** FALLBACK: Original regex logic for non-tabular text ***
+                // Only run if the tabular logic didn't find anything
+                if (!found) {
+                    fbsGlucosePatterns.forEach(pattern => {
+                        // Reset regex lastIndex for global patterns
+                        pattern.lastIndex = 0;
+                        const matches = [...originalLine.matchAll(pattern)];
+                        matches.forEach(match => {
+                            const value = parseFloat(match[1]);
+                            if (value >= 30 && value <= 500) {
+                                const unit = match[2] || determineUnitFromContext(originalLine) || 'mg/dL';
+                                
+                                results.push({
+                                    value: value,
+                                    unit: unit,
+                                    context: originalLine.trim(),
+                                    line: lineIndex + 1,
+                                    type: 'FBS',
+                                    confidence: fbsFound ? 'high' : (contextFound ? 'medium' : 'low')
+                                });
+                            }
+                        });
+                    });
+                }
+            });
+            
+            // Second pass: Look for glucose values in early morning context
+            lines.forEach((line, lineIndex) => {
+                // Skip if we already processed this line for FBS
+                if (results.some(r => r.line === lineIndex + 1)) return;
+                
+                // Check for early morning time
+                const timeMatch = line.match(/\b(0[6-9]|1[0-2]):[0-5][0-9]\s*(AM|am|A\.M\.|a\.m\.)/);
+                if (timeMatch) {
+                    // Extract glucose values
+                    glucosePatterns.forEach(pattern => {
+                        pattern.lastIndex = 0;
+                        const matches = [...line.matchAll(pattern)];
+                        matches.forEach(match => {
+                            const value = parseFloat(match[1]);
+                            if (value >= 30 && value <= 500) {
+                                const unit = match[0].includes('mmol') ? 'mmol/L' : 'mg/dL';
+                                
+                                results.push({
+                                    value: value,
+                                    unit: unit,
+                                    context: line.trim(),
+                                    line: lineIndex + 1,
+                                    type: 'Possible FBS',
+                                    confidence: 'low',
+                                    reason: 'Early morning time'
+                                });
+                            }
+                        });
+                    });
+                }
+            });
+            
+            return results;
+        }
+
+        // Helper function to determine unit from context
+        function determineUnitFromContext(text) {
+            if (text.toLowerCase().includes('mmol')) return 'mmol/L';
+            if (text.toLowerCase().includes('mg')) return 'mg/dL';
+            return null; // Default will be set by caller
+        }
+
+        function displayPDFResults(filename, values, fullText) {
+            const resultsEl = document.getElementById('pdfResults');
+            const extractedValuesEl = document.getElementById('extractedValues');
+
+            if (!resultsEl || !extractedValuesEl) return;
+
+            if (values.length === 0) {
+                extractedValuesEl.innerHTML = '<p class="no-data">No fasting blood sugar values found in this PDF</p>';
+            } else {
+                // Separate FBS and possible FBS values
+                const fbsValues = values.filter(v => v.type === 'FBS');
+                const possibleFbsValues = values.filter(v => v.type === 'Possible FBS');
+                
+                let html = '';
+                
+                if (fbsValues.length > 0) {
+                    html += '<h4>Fasting Blood Sugar Values</h4>';
+                    html += fbsValues.map((value, index) => `
+                        <div class="extracted-value fbs-value" data-index="${index}">
+                            <div class="value-main">
+                                <strong>${value.value} ${value.unit}</strong>
+                                <span class="confidence-badge confidence-${value.confidence}">${value.confidence} confidence</span>
+                                <button class="btn btn--primary btn--sm" onclick="addExtractedValue(${index}, ${JSON.stringify(value).replace(/"/g, '&quot;')})">
+                                    Add Reading
+                                </button>
+                            </div>
+                            <div class="value-context">${value.context}</div>
+                        </div>
+                    `).join('');
+                }
+                
+                if (possibleFbsValues.length > 0) {
+                    html += '<h4>Possible Fasting Blood Sugar Values</h4>';
+                    html += possibleFbsValues.map((value, index) => {
+                        const adjustedIndex = fbsValues.length + index;
+                        return `
+                            <div class="extracted-value possible-fbs-value" data-index="${adjustedIndex}">
+                                <div class="value-main">
+                                    <strong>${value.value} ${value.unit}</strong>
+                                    <span class="confidence-badge confidence-${value.confidence}">${value.confidence} confidence</span>
+                                    <span class="possible-reason">${value.reason}</span>
+                                    <button class="btn btn--primary btn--sm" onclick="addExtractedValue(${adjustedIndex}, ${JSON.stringify(value).replace(/"/g, '&quot;')})">
+                                        Add Reading
+                                    </button>
+                                </div>
+                                <div class="value-context">${value.context}</div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+                extractedValuesEl.innerHTML = html;
+            }
+
+            resultsEl.style.display = 'block';
+        }
+
+        // Text Processing
+        function handleTextScan() {
+            const textArea = document.getElementById('medicalText');
+            const text = textArea.value.trim();
+
+            if (!text) {
+                showStatus('Please enter some text to scan', 'error');
+                return;
+            }
+
+            setButtonLoading('scanText', true);
+
+            // Simulate processing delay
+            setTimeout(() => {
+                const extractedValues = extractGlucoseFromText(text);
+                displayTextResults(extractedValues);
+                setButtonLoading('scanText', false);
+
+                if (extractedValues.length > 0) {
+                    showStatus(`Found ${extractedValues.length} glucose values`, 'success');
+                } else {
+                    showStatus('No glucose values found in the text', 'info');
+                }
+            }, 500);
+        }
+
+        function displayTextResults(values) {
+            const resultsEl = document.getElementById('textResults');
+            const foundValuesEl = document.getElementById('foundValues');
+
+            if (!resultsEl || !foundValuesEl) return;
+
+            if (values.length === 0) {
+                foundValuesEl.innerHTML = '<p class="no-data">No fasting blood sugar values found in this text</p>';
+            } else {
+                // Separate FBS and possible FBS values
+                const fbsValues = values.filter(v => v.type === 'FBS');
+                const possibleFbsValues = values.filter(v => v.type === 'Possible FBS');
+                
+                let html = '';
+                
+                if (fbsValues.length > 0) {
+                    html += '<h4>Fasting Blood Sugar Values</h4>';
+                    html += fbsValues.map((value, index) => `
+                        <div class="extracted-value fbs-value" data-index="${index}">
+                            <div class="value-main">
+                                <strong>${value.value} ${value.unit}</strong>
+                                <span class="confidence-badge confidence-${value.confidence}">${value.confidence} confidence</span>
+                                <button class="btn btn--primary btn--sm" onclick="addExtractedValue(${index}, ${JSON.stringify(value).replace(/"/g, '&quot;')})">
+                                    Add Reading
+                                </button>
+                            </div>
+                            <div class="value-context">Line ${value.line}: ${value.context}</div>
+                        </div>
+                    `).join('');
+                }
+                
+                if (possibleFbsValues.length > 0) {
+                    html += '<h4>Possible Fasting Blood Sugar Values</h4>';
+                    html += possibleFbsValues.map((value, index) => {
+                        const adjustedIndex = fbsValues.length + index;
+                        return `
+                            <div class="extracted-value possible-fbs-value" data-index="${adjustedIndex}">
+                                <div class="value-main">
+                                    <strong>${value.value} ${value.unit}</strong>
+                                    <span class="confidence-badge confidence-${value.confidence}">${value.confidence} confidence</span>
+                                    <span class="possible-reason">${value.reason}</span>
+                                    <button class="btn btn--primary btn--sm" onclick="addExtractedValue(${adjustedIndex}, ${JSON.stringify(value).replace(/"/g, '&quot;')})">
+                                        Add Reading
+                                    </button>
+                                </div>
+                                <div class="value-context">Line ${value.line}: ${value.context}</div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+                foundValuesEl.innerHTML = html;
+            }
+
+            resultsEl.style.display = 'block';
+        }
+
+        function addExtractedValue(index, value) {
+            // Determine meal tag based on type
+            let mealTag = 'Fasting';
+            if (value.type === 'Possible FBS') {
+                mealTag = 'Possible Fasting';
+            }
+            
+            const newReading = {
+                id: Date.now(),
+                glucose: value.value,
+                unit: value.unit,
+                timestamp: new Date().toISOString(),
+                mealTag: mealTag,
+                notes: `Extracted from: ${value.context.substring(0, 100)}...`
+            };
+
+            glucoseData.unshift(newReading);
+            saveData();
+            updateDashboard();
+
+            showStatus('Fasting blood sugar reading added from extracted data!', 'success');
+
+            // Remove the extracted value from display
+            const valueElement = document.querySelector(`[data-index="${index}"]`);
+            if (valueElement) {
+                valueElement.style.opacity = '0.5';
+                valueElement.querySelector('button').disabled = true;
+                valueElement.querySelector('button').textContent = 'Added';
+            }
+        }
+
+        // Chart Functions
+        function updateChart() {
+            const chartType = document.getElementById('chartType').value;
+            const dateRange = document.getElementById('dateRange').value;
+
+            const canvas = document.getElementById('mainChart');
+            if (!canvas) return;
+
+            // Destroy existing chart
+            if (charts.main) {
+                charts.main.destroy();
+            }
+
+            // Filter data by date range
+            let filteredData = [...glucoseData];
+            if (dateRange !== 'all') {
+                const days = parseInt(dateRange);
+                const cutoffDate = new Date();
+                cutoffDate.setDate(cutoffDate.getDate() - days);
+                filteredData = glucoseData.filter(reading => 
+                    new Date(reading.timestamp) >= cutoffDate
+                );
+            }
+
+            // Sort by timestamp
+            filteredData.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+            const ctx = canvas.getContext('2d');
+
+            switch (chartType) {
+                case 'trend':
+                    charts.main = createTrendChart(ctx, filteredData);
+                    break;
+                case 'daily':
+                    charts.main = createDailyPatternChart(ctx, filteredData);
+                    break;
+                case 'range':
+                    charts.main = createTimeInRangeChart(ctx, filteredData);
+                    break;
+            }
+
+            updateChartStats(filteredData);
+        }
+
+        function createTrendChart(ctx, data) {
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(reading => 
+                        new Date(reading.timestamp).toLocaleDateString()
+                    ),
+                    datasets: [{
+                        label: 'Glucose Level',
+                        data: data.map(reading => reading.glucose),
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'Glucose (mg/dL)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const reading = data[context.dataIndex];
+                                    return `${reading.glucose} ${reading.unit} (${reading.mealTag || 'No tag'})`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createDailyPatternChart(ctx, data) {
+            // Group data by hour of day
+            const hourlyData = {};
+
+            data.forEach(reading => {
+                const hour = new Date(reading.timestamp).getHours();
+                if (!hourlyData[hour]) {
+                    hourlyData[hour] = [];
+                }
+                hourlyData[hour].push(reading.glucose);
+            });
+
+            // Calculate averages for each hour
+            const labels = [];
+            const averages = [];
+
+            for (let hour = 0; hour < 24; hour++) {
+                labels.push(`${hour}:00`);
+                if (hourlyData[hour]) {
+                    const avg = hourlyData[hour].reduce((sum, val) => sum + val, 0) / hourlyData[hour].length;
+                    averages.push(Math.round(avg));
+                } else {
+                    averages.push(null);
+                }
+            }
+
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Average Glucose by Hour',
+                        data: averages,
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'Average Glucose (mg/dL)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Hour of Day'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        }
+
+        function createTimeInRangeChart(ctx, data) {
+            if (data.length === 0) {
+                return new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['No Data'],
+                        datasets: [{
+                            data: [1],
+                            backgroundColor: ['#e5e7eb']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+
+            const lowCount = data.filter(r => r.glucose < settings.normalMin).length;
+            const normalCount = data.filter(r => 
+                r.glucose >= settings.normalMin && r.glucose <= settings.normalMax
+            ).length;
+            const highCount = data.filter(r => r.glucose > settings.normalMax).length;
+
+            return new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Low', 'Normal', 'High'],
+                    datasets: [{
+                        data: [lowCount, normalCount, highCount],
+                        backgroundColor: ['#f59e0b', '#10b981', '#ef4444'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = lowCount + normalCount + highCount;
+                                    const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                    return `${context.label}: ${context.parsed} readings (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChartStats(data) {
+            const periodReadingsEl = document.getElementById('periodReadings');
+            const periodAverageEl = document.getElementById('periodAverage');
+            const periodTIREl = document.getElementById('periodTIR');
+
+            if (!periodReadingsEl || !periodAverageEl || !periodTIREl) return;
+
+            if (data.length === 0) {
+                periodReadingsEl.textContent = '0';
+                periodAverageEl.textContent = '--';
+                periodTIREl.textContent = '--%';
+                return;
+            }
+
+            const total = data.reduce((sum, reading) => sum + reading.glucose, 0);
+            const average = Math.round(total / data.length);
+
+            const inRange = data.filter(reading => 
+                reading.glucose >= settings.normalMin && reading.glucose <= settings.normalMax
+            ).length;
+            const tir = Math.round((inRange / data.length) * 100);
+
+            periodReadingsEl.textContent = data.length;
+            periodAverageEl.textContent = `${average} mg/dL`;
+            periodTIREl.textContent = `${tir}%`;
+        }
+
+        // Export Functions
+        function exportData(format) {
+            if (glucoseData.length === 0) {
+                showStatus('No data to export', 'error');
+                return;
+            }
+
+            switch (format) {
+                case 'csv':
+                    exportCSV();
+                    break;
+                case 'json':
+                    exportJSON();
+                    break;
+                case 'pdf':
+                    exportPDF();
+                    break;
+            }
+        }
+
+        function exportCSV() {
+            const headers = ['Date', 'Time', 'Glucose Level', 'Unit', 'Meal Tag', 'Notes'];
+            const csvData = [headers];
+
+            const sortedData = [...glucoseData].sort((a, b) => 
+                new Date(a.timestamp) - new Date(b.timestamp)
+            );
+
+            sortedData.forEach(reading => {
+                const date = new Date(reading.timestamp);
+                const row = [
+                    date.toISOString().split('T')[0],
+                    date.toTimeString().split(' ')[0],
+                    reading.glucose,
+                    reading.unit,
+                    reading.mealTag || '',
+                    reading.notes || ''
+                ];
+                csvData.push(row);
+            });
+
+            const csvContent = csvData.map(row => 
+                row.map(field => `"${field}"`).join(',')
+            ).join('\n');
+
+            downloadFile(csvContent, 'glucose-data.csv', 'text/csv');
+            showStatus('CSV file downloaded successfully!', 'success');
+        }
+
+        function exportJSON() {
+            const exportData = {
+                exportDate: new Date().toISOString(),
+                settings: settings,
+                data: glucoseData
+            };
+
+            const jsonContent = JSON.stringify(exportData, null, 2);
+            downloadFile(jsonContent, 'glucose-backup.json', 'application/json');
+            showStatus('JSON backup downloaded successfully!', 'success');
+        }
+
+async function exportPDF() {
+    if (glucoseData.length === 0) {
+        showStatus('No data to export', 'error');
+        return;
+    }
+
+    showLoading('Generating PDF Report...');
+
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
+        });
+
+        // Page dimensions
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const margin = 20;
+        let currentY = margin + 10;
+
+        // Helper function to add a new page if needed
+        function checkPageBreak(requiredHeight) {
+            if (currentY + requiredHeight > pageHeight - margin) {
+                doc.addPage();
+                currentY = margin + 10;
+                addHeader();
+                return true;
+            }
+            return false;
+        }
+
+        // Helper function to add header to each page
+        function addHeader() {
+            // Header background
+            doc.setFillColor(59, 130, 246);
+            doc.rect(0, 0, pageWidth, 15, 'F');
+
+            // Title
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(14);
+            doc.setTextColor(255);
+            doc.text('Glucose Tracker Pro Report', pageWidth / 2, 10, { align: 'center' });
+
+            // Date range
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            const startDate = new Date(glucoseData[glucoseData.length - 1].timestamp).toLocaleDateString();
+            const endDate = new Date(glucoseData[0].timestamp).toLocaleDateString();
+            doc.text(`Report Period: ${startDate} to ${endDate}`, pageWidth / 2, 14, { align: 'center' });
+        }
+
+        // Initialize first page
+        addHeader();
+
+        // Executive Summary Section
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.setTextColor(59, 130, 246);
+        doc.text('Executive Summary', margin, currentY);
+        currentY += 10;
+
+        // Calculate comprehensive statistics
+        const sortedData = [...glucoseData].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        const values = sortedData.map(r => r.glucose);
+        const total = values.reduce((sum, r) => sum + r, 0);
+        const average = Math.round((total / values.length) * 10) / 10;
+        const min = Math.min(...values);
+        const max = Math.max(...values);
+
+        // Calculate median
+        const sortedValues = [...values].sort((a, b) => a - b);
+        const median = sortedValues.length % 2 === 0
+            ? (sortedValues[sortedValues.length / 2 - 1] + sortedValues[sortedValues.length / 2]) / 2
+            : sortedValues[Math.floor(sortedValues.length / 2)];
+
+        // Calculate standard deviation
+        const variance = values.reduce((sum, val) => sum + Math.pow(val - average, 2), 0) / values.length;
+        const stdDev = Math.round(Math.sqrt(variance) * 10) / 10;
+
+        // Time in range calculations
+        const inRangeCount = sortedData.filter(r => r.glucose >= settings.normalMin && r.glucose <= settings.normalMax).length;
+        const tir = Math.round((inRangeCount / sortedData.length) * 100);
+
+        // Calculate coefficient of variation
+        const cv = Math.round((stdDev / average) * 100 * 10) / 10;
+
+        // Calculate data completeness
+        const totalDays = Math.ceil((new Date(sortedData[sortedData.length - 1].timestamp) - new Date(sortedData[0].timestamp)) / (1000 * 60 * 60 * 24));
+        const uniqueDays = new Set(sortedData.map(r => new Date(r.timestamp).toDateString())).size;
+        const completeness = Math.round((uniqueDays / totalDays) * 100);
+
+        // Create comprehensive summary table
+        doc.autoTable({
+            startY: currentY,
+            head: [['Metric', 'Value', 'Description']],
+            body: [
+                ['Average Glucose', `${average} mg/dL`, 'Mean glucose level'],
+                ['Median Glucose', `${median} mg/dL`, 'Middle value when sorted'],
+                ['Minimum Glucose', `${min} mg/dL`, 'Lowest recorded value'],
+                ['Maximum Glucose', `${max} mg/dL`, 'Highest recorded value'],
+                ['Standard Deviation', `${stdDev} mg/dL`, 'Variability measure'],
+                ['Coefficient of Variation', `${cv}%`, 'Relative variability'],
+                ['Time in Range', `${tir}% (${settings.normalMin}-${settings.normalMax} mg/dL)`, 'Percentage within normal range'],
+                ['Total Readings', `${sortedData.length}`, 'Number of glucose measurements'],
+                ['Data Period', `${totalDays} days`, 'Total time span'],
+                ['Data Completeness', `${completeness}%`, 'Days with readings vs total days'],
+            ],
+            theme: 'grid',
+            styles: {
+                fontSize: 10,
+                cellPadding: 3,
+                lineColor: [200, 200, 200],
+                lineWidth: 0.2,
+                halign: 'left',
+                valign: 'middle'
+            },
+            headStyles: {
+                fillColor: [59, 130, 246],
+                textColor: 255,
+                fontStyle: 'bold',
+                halign: 'center'
+            },
+            columnStyles: {
+                0: { fontStyle: 'bold', cellWidth: 55, halign: 'left' },
+                1: { cellWidth: 45, halign: 'center' },
+                2: { cellWidth: 'auto', halign: 'left' }
+            },
+            margin: { left: margin, right: margin },
+            alternateRowStyles: { fillColor: [250, 250, 250] }
+        });
+
+        currentY = doc.lastAutoTable.finalY + 15;
+        checkPageBreak(80);
+
+        // Add charts section
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.setTextColor(59, 130, 246);
+        doc.text('Glucose Trends', margin, currentY);
+        currentY += 12;
+
+        // Create temporary canvas for chart generation
+        const chartContainer = document.createElement('div');
+        chartContainer.style.position = 'absolute';
+        chartContainer.style.left = '-9999px';
+        chartContainer.style.width = '800px';
+        chartContainer.style.height = '400px';
+        document.body.appendChild(chartContainer);
+
+        // Generate trend chart
+        const trendCanvas = document.createElement('canvas');
+        trendCanvas.width = 800;
+        trendCanvas.height = 400;
+        chartContainer.appendChild(trendCanvas);
+
+        const trendChart = createTrendChart(trendCanvas.getContext('2d'), sortedData);
+        await new Promise(resolve => setTimeout(resolve, 800)); // Wait for chart to render
+
+        // Add chart to PDF with better positioning
+        const chartWidth = pageWidth - (margin * 2);
+        const chartHeight = 85;
+        const trendImg = trendCanvas.toDataURL('image/png');
+        doc.addImage(trendImg, 'PNG', margin, currentY, chartWidth, chartHeight);
+
+        // Add chart title
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text('Glucose Trend Analysis', pageWidth / 2, currentY - 2, { align: 'center' });
+
+        currentY += chartHeight + 15;
+
+        // Clean up
+        trendChart.destroy();
+        chartContainer.removeChild(trendCanvas);
+
+        // Generate time in range chart
+        checkPageBreak(120);
+
+        const tirCanvas = document.createElement('canvas');
+        tirCanvas.width = 400;
+        tirCanvas.height = 400;
+        chartContainer.appendChild(tirCanvas);
+
+        const tirChart = createTimeInRangeChart(tirCanvas.getContext('2d'), sortedData);
+        await new Promise(resolve => setTimeout(resolve, 800));
+
+        const tirImg = tirCanvas.toDataURL('image/png');
+        const tirChartSize = 70;
+        doc.addImage(tirImg, 'PNG', margin, currentY, tirChartSize, tirChartSize);
+
+        // Add time in range statistics with better alignment
+        const lowCount = sortedData.filter(r => r.glucose < settings.normalMin).length;
+        const normalCount = sortedData.filter(r => r.glucose >= settings.normalMin && r.glucose <= settings.normalMax).length;
+        const highCount = sortedData.filter(r => r.glucose > settings.normalMax).length;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(60);
+
+        const statsX = margin + tirChartSize + 15;
+        const lineHeight = 6;
+
+        doc.setTextColor(239, 68, 68); // Red for low
+        doc.text(`Low: ${lowCount} readings (${Math.round(lowCount/sortedData.length*100)}%)`, statsX, currentY + 15);
+
+        doc.setTextColor(34, 197, 94); // Green for normal
+        doc.text(`Normal: ${normalCount} readings (${Math.round(normalCount/sortedData.length*100)}%)`, statsX, currentY + 15 + lineHeight);
+
+        doc.setTextColor(245, 158, 11); // Orange for high
+        doc.text(`High: ${highCount} readings (${Math.round(highCount/sortedData.length*100)}%)`, statsX, currentY + 15 + (lineHeight * 2));
+
+        // Add chart title
+        doc.setTextColor(100);
+        doc.text('Time in Range Distribution', pageWidth / 2, currentY - 2, { align: 'center' });
+
+        currentY += tirChartSize + 20;
+
+        // Clean up
+        tirChart.destroy();
+        chartContainer.removeChild(tirCanvas);
+        document.body.removeChild(chartContainer);
+
+        // Add detailed analysis section
+        checkPageBreak(40);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.setTextColor(59, 130, 246);
+        doc.text('Detailed Analysis', margin, currentY);
+        currentY += 12;
+
+        // Add meal-based analysis
+        const mealAnalysis = {};
+        sortedData.forEach(r => {
+            const meal = r.mealTag || 'No Tag';
+            if (!mealAnalysis[meal]) {
+                mealAnalysis[meal] = [];
+            }
+            mealAnalysis[meal].push(r.glucose);
+        });
+
+        const mealStats = Object.entries(mealAnalysis).map(([meal, values]) => {
+            const avg = Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 10) / 10;
+            const count = values.length;
+            const percentage = Math.round((count / sortedData.length) * 100);
+            return [meal, `${avg} mg/dL`, count, `${percentage}%`];
+        });
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.setTextColor(59, 130, 246);
+        doc.text('Analysis by Meal Tag', margin, currentY);
+        currentY += 8;
+
+        doc.autoTable({
+            startY: currentY,
+            head: [['Meal Tag', 'Average Glucose', 'Count', 'Percentage']],
+            body: mealStats,
+            theme: 'grid',
+            styles: {
+                fontSize: 10,
+                cellPadding: 3,
+                lineColor: [200, 200, 200],
+                lineWidth: 0.2,
+                halign: 'center',
+                valign: 'middle'
+            },
+            headStyles: {
+                fillColor: [59, 130, 246],
+                textColor: 255,
+                fontStyle: 'bold'
+            },
+            columnStyles: {
+                0: { cellWidth: 40, halign: 'left' },
+                1: { cellWidth: 40, halign: 'center' },
+                2: { cellWidth: 25, halign: 'center' },
+                3: { cellWidth: 35, halign: 'center' }
+            },
+            margin: { left: margin, right: margin },
+            alternateRowStyles: { fillColor: [250, 250, 250] }
+        });
+
+        currentY = doc.lastAutoTable.finalY + 15;
+
+        // Add readings table
+        checkPageBreak(40);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.setTextColor(59, 130, 246);
+        doc.text('Complete Readings Log', margin, currentY);
+        currentY += 12;
+
+        // Prepare table data with more details
+        const tableData = sortedData.slice(-50).map(r => { // Show last 50 readings
+            const date = new Date(r.timestamp);
+            const status = r.glucose < settings.normalMin ? 'Low' :
+                          r.glucose > settings.normalMax ? 'High' : 'Normal';
+            return [
+                date.toLocaleDateString(),
+                date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                r.glucose.toString(),
+                r.unit,
+                r.mealTag || '-',
+                status,
+                r.notes ? (r.notes.length > 30 ? r.notes.substring(0, 30) + '...' : r.notes) : '-'
+            ];
+        });
+
+        // Add table with improved styling and alignment
+        doc.autoTable({
+            startY: currentY,
+            head: [['Date', 'Time', 'Glucose', 'Unit', 'Meal Tag', 'Status', 'Notes']],
+            body: tableData,
+            theme: 'grid',
+            styles: {
+                fontSize: 8,
+                cellPadding: 2,
+                lineColor: [200, 200, 200],
+                lineWidth: 0.2,
+                overflow: 'linebreak',
+                halign: 'left',
+                valign: 'middle'
+            },
+            headStyles: {
+                fillColor: [59, 130, 246],
+                textColor: 255,
+                fontStyle: 'bold',
+                halign: 'center'
+            },
+            columnStyles: {
+                0: { cellWidth: 25, halign: 'center' },
+                1: { cellWidth: 20, halign: 'center' },
+                2: { cellWidth: 18, halign: 'center' },
+                3: { cellWidth: 15, halign: 'center' },
+                4: { cellWidth: 25, halign: 'center' },
+                5: { cellWidth: 20, halign: 'center' },
+                6: { cellWidth: 'auto', halign: 'left' }
+            },
+            margin: { left: margin, right: margin },
+            alternateRowStyles: { fillColor: [250, 250, 250] },
+            didDrawPage: function(data) {
+                // Add header to each new page
+                addHeader();
+            }
+        });
+
+        // Add summary note if truncated
+        if (sortedData.length > 50) {
+            currentY = doc.lastAutoTable.finalY + 5;
+            doc.setFont('helvetica', 'italic');
+            doc.setFontSize(8);
+            doc.setTextColor(100);
+            doc.text(`* Showing last 50 of ${sortedData.length} total readings`, margin, currentY);
+            currentY += 8;
+        }
+
+        // Add notes section
+        currentY = doc.lastAutoTable.finalY + 15;
+        checkPageBreak(40);
+
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(14);
+        doc.setTextColor(59, 130, 246);
+        doc.text('Notes', margin, currentY);
+        currentY += 10;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(60);
+        const notes = [
+            '• This report was generated by Glucose Tracker Pro.',
+            `• Normal range is defined as ${settings.normalMin}-${settings.normalMax} mg/dL.`,
+            '• Time in Range (TIR) represents the percentage of readings within the normal range.',
+            '• This report is for informational purposes only and should not replace medical advice.'
+        ];
+
+        notes.forEach(note => {
+            doc.text(note, margin, currentY);
+            currentY += 6;
+        });
+
+        // Add footer to last page
+        doc.setFont('helvetica', 'italic');
+        doc.setFontSize(8);
+        doc.setTextColor(100);
+        doc.text(`Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+
+        // Save the PDF
+        const fileName = `Glucose-Report-${new Date().toISOString().split('T')[0]}.pdf`;
+        doc.save(fileName);
+
+        showStatus('PDF report generated successfully!', 'success');
+    } catch (error) {
+        console.error('PDF generation failed:', error);
+        showStatus('Failed to generate PDF: ' + error.message, 'error');
+    } finally {
+        hideLoading();
+    }
+}
+        function downloadFile(content, filename, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.style.display = 'none';
+
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            URL.revokeObjectURL(url);
+        }
+
+        // Settings Functions
+        function saveSettings() {
+            const normalMin = parseFloat(document.getElementById('normalMin').value);
+            const normalMax = parseFloat(document.getElementById('normalMax').value);
+            const defaultUnit = document.getElementById('defaultUnit').value;
+
+            if (normalMin >= normalMax) {
+                showStatus('Minimum value must be less than maximum value', 'error');
+                return;
+            }
+
+            settings.normalMin = normalMin;
+            settings.normalMax = normalMax;
+            settings.unit = defaultUnit;
+
+            saveData();
+            updateDashboard();
+            showStatus('Settings saved successfully!', 'success');
+        }
+
+        function handleDataImport(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importData = JSON.parse(e.target.result);
+
+                    if (importData.data && Array.isArray(importData.data)) {
+                        glucoseData = importData.data;
+                        if (importData.settings) {
+                            settings = { ...settings, ...importData.settings };
+                        }
+
+                        saveData();
+                        updateDashboard();
+                        showStatus(`Imported ${glucoseData.length} glucose readings!`, 'success');
+                    } else {
+                        showStatus('Invalid file format', 'error');
+                    }
+                } catch (error) {
+                    showStatus('Error importing data: ' + error.message, 'error');
+                }
+            };
+
+            reader.readAsText(file);
+        }
+
+        function handleClearAllData() {
+            if (confirm('Are you sure you want to delete all glucose data? This cannot be undone.')) {
+                glucoseData = [];
+                saveData();
+                updateDashboard();
+                showStatus('All data has been cleared', 'success');
+            }
+        }
+
+        // Theme Functions
+        function initializeTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'auto';
+            applyTheme(savedTheme);
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            applyTheme(newTheme);
+        }
+
+        function applyTheme(theme) {
+            if (theme === 'auto') {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                theme = prefersDark ? 'dark' : 'light';
+            }
+
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+
+            // Update theme toggle button
+            const themeToggle = document.getElementById('themeToggle');
+            if (themeToggle) {
+                themeToggle.textContent = theme === 'dark' ? '☀️' : '🌓';
+            }
+        }
+
+        // Utility Functions
+        function showStatus(message, type = 'info') {
+            const statusEl = document.getElementById('statusMessage');
+            if (!statusEl) return;
+
+            statusEl.textContent = message;
+            statusEl.className = `status-message ${type}`;
+            statusEl.classList.remove('hidden');
+
+            setTimeout(() => {
+                statusEl.classList.add('hidden');
+            }, 4000);
+        }
+
+        function showLoading(message = 'Loading...') {
+            const loadingEl = document.getElementById('loadingOverlay');
+            if (loadingEl) {
+                loadingEl.querySelector('p').textContent = message;
+                loadingEl.style.display = 'flex';
+            }
+        }
+
+        function hideLoading() {
+            const loadingEl = document.getElementById('loadingOverlay');
+            if (loadingEl) {
+                loadingEl.style.display = 'none';
+            }
+        }
+
+        function setButtonLoading(buttonId, isLoading) {
+            const btn = document.getElementById(buttonId);
+            if (!btn) return;
+
+            const btnText = btn.querySelector('.btn-text');
+            const btnLoading = btn.querySelector('.btn-loading');
+
+            if (isLoading) {
+                btn.disabled = true;
+                if (btnText) btnText.style.display = 'none';
+                if (btnLoading) btnLoading.style.display = 'inline';
+            } else {
+                btn.disabled = false;
+                if (btnText) btnText.style.display = 'inline';
+                if (btnLoading) btnLoading.style.display = 'none';
+            }
+        }
+
+// Batch File Functions - Updated to connect to backend
+async function handleRunBatch() {
+    const runBatchBtn = document.getElementById('runBatchBtn');
+    const batchOutput = document.getElementById('batchOutput');
+    
+    // Store original button content
+    const originalContent = runBatchBtn.innerHTML;
+    
+    // Set loading state
+    runBatchBtn.disabled = true;
+    runBatchBtn.innerHTML = '⏳ Running...';
+    
+    try {
+        showLoading('Running installation script...');
+        
+        const response = await fetch('/api/run-batch', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showStatus('Installation script executed successfully!', 'success');
+            batchOutput.textContent = data.output || 'Script completed successfully';
+            batchOutput.style.display = 'block';
+        } else {
+            showStatus('Error running installation script: ' + data.error, 'error');
+            batchOutput.textContent = 'Error: ' + data.error;
+            batchOutput.style.display = 'block';
+        }
+    } catch (err) {
+        showStatus('Failed to connect to server. Please check if the server is running.', 'error');
+        console.error(err);
+        batchOutput.textContent = 'Connection error: ' + err.message;
+        batchOutput.style.display = 'block';
+    } finally {
+        // Always reset states
+        hideLoading();
+        runBatchBtn.disabled = false;
+        runBatchBtn.innerHTML = originalContent;
+    }
+}
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            updateDashboard();
+            initializeTheme();
+        });
+    </script>
 </body>
 </html>

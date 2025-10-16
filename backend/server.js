@@ -6,8 +6,9 @@ const fs = require('fs').promises;
 const pdf = require('pdf-parse');
 const sqlite3 = require('sqlite3').verbose();
 
+
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 7001;
 
 // Middleware
 app.use(cors());
@@ -344,17 +345,51 @@ app.use((error, req, res, next) => {
     res.status(500).json({ error: 'Internal server error' });
 });
 
+const { exec } = require('child_process');
+
+app.post('/api/run-batch', (req, res) => {
+    exec('C:\\Users\\MSI\\OneDrive\\Desktop\\Fast_Blood_Sugar_Report-main\\install.bat', (error, stdout, stderr) => {
+        if (error) {
+            console.error('Batch error:', error.message);
+            return res.status(500).json({ success: false, error: error.message });
+        }
+        res.json({
+            success: true,
+            output: stdout
+        });
+    });
+});
+
+
 // Start server
 const startServer = async () => {
     try {
         await createUploadsDir();
         await initDB();
 
-        app.listen(PORT, () => {
-            console.log(`🚀 Glucose Meter Server running on port ${PORT}`);
-            console.log(`📊 Dashboard: http://localhost:${PORT}`);
-            console.log(`🔗 API: http://localhost:${PORT}/api`);
-        });
+        // Try to start on the preferred port, or find an available one
+        const tryStartServer = (port) => {
+            return new Promise((resolve, reject) => {
+                const server = app.listen(port, () => {
+                    console.log(`🚀 Glucose Meter Server running on port ${port}`);
+                    console.log(`📊 Dashboard: http://localhost:${port}`);
+                    console.log(`🔗 API: http://localhost:${port}/api`);
+                    resolve(server);
+                });
+
+                server.on('error', (err) => {
+                    if (err.code === 'EADDRINUSE') {
+                        console.log(`Port ${port} is already in use, trying next port...`);
+                        // Try next port
+                        tryStartServer(port + 1).then(resolve).catch(reject);
+                    } else {
+                        reject(err);
+                    }
+                });
+            });
+        };
+
+        tryStartServer(PORT);
     } catch (error) {
         console.error('Failed to start server:', error);
         process.exit(1);
@@ -362,5 +397,6 @@ const startServer = async () => {
 };
 
 startServer();
+
 
 module.exports = app;

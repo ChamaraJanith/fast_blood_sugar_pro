@@ -52,6 +52,22 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+document.getElementById('runBatchBtn').addEventListener('click', async () => {
+    try {
+        const response = await fetch('/api/run-batch', { method: 'POST' });
+        const data = await response.json();
+        if (data.success) {
+            alert('Batch file executed successfully!\n' + data.output);
+        } else {
+            alert('Error running batch file:\n' + data.error);
+        }
+    } catch (err) {
+        alert('Failed to connect to batch API');
+        console.error(err);
+    }
+});
+
+
 // Event Listeners
 function initializeEventListeners() {
     // Navigation
@@ -606,6 +622,36 @@ function addExtractedValue(index, value) {
 }
 
 // Chart Functions
+async function prepareChartCanvas() {
+    const chartCanvas = document.getElementById('mainChart');
+    if (!chartCanvas) {
+        console.warn('Chart canvas not found');
+        return false;
+    }
+
+    // Make sure charts section is active
+    const chartsSection = document.getElementById('charts');
+    if (chartsSection) {
+        chartsSection.classList.add('active');
+    }
+
+    // Set canvas dimensions
+    chartCanvas.style.width = '800px';
+    chartCanvas.style.height = '400px';
+    chartCanvas.style.display = 'block';
+
+    // Wait for chart to be visible
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Update chart to ensure it's rendered
+    if (charts.main) {
+        charts.main.update();
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    return true;
+}
+
 function updateChart() {
     const chartType = document.getElementById('chartType').value;
     const dateRange = document.getElementById('dateRange').value;
@@ -984,6 +1030,14 @@ function handleDataImport(e) {
 }
 
 function handleClearAllData() {
+    const normalMin = parseFloat(document.getElementById('normalMin').value);
+    const normalMax = parseFloat(document.getElementById('normalMax').value);
+
+    if (normalMin >= normalMax) {
+        showStatus('Minimum value must be less than maximum value', 'error');
+        return;
+    }
+
     if (confirm('Are you sure you want to delete all glucose data? This cannot be undone.')) {
         glucoseData = [];
         saveData();
